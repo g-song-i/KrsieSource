@@ -137,6 +137,8 @@ func Krsie() {
 		}
 	}
 
+	fmt.Print("Initialized Kubernetes client")
+
 	// get kubernetes node information
 	go dm.WatchK8sNodes()
 	fmt.Println("Started to monitor node events")

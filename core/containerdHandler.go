@@ -153,7 +153,6 @@ func (ch *ContainerdHandler) GetContainerInfo(ctx context.Context, containerID s
 	}
 
 	spec := iface.(*specs.Spec)
-	container.AppArmorProfile = spec.Process.ApparmorProfile
 
 	if spec.Root.Path == "rootfs" { // containerd
 		preMergedDir := ch.StoragePath + "/io.containerd.runtime.v2.task/k8s.io/"
@@ -247,7 +246,7 @@ func (ch *ContainerdHandler) GetDeletedContainerdContainers(containers map[strin
 }
 
 // UpdateContainerdContainer Function
-func (dm *KubeArmorDaemon) UpdateContainerdContainer(ctx context.Context, containerID, action string) bool {
+func (dm *KrsieDaemon) UpdateContainerdContainer(ctx context.Context, containerID, action string) bool {
 	// check if Containerd exists
 	if Containerd == nil {
 		return false
@@ -299,7 +298,7 @@ func (dm *KubeArmorDaemon) UpdateContainerdContainer(ctx context.Context, contai
 			return false
 		}
 
-		dm.Logger.Printf("Detected a container (added/%s)", containerID[:12])
+		fmt.Printf("Detected a container (added/%s)", containerID[:12])
 
 	} else if action == "destroy" {
 		dm.ContainersLock.Lock()
@@ -326,14 +325,14 @@ func (dm *KubeArmorDaemon) UpdateContainerdContainer(ctx context.Context, contai
 		}
 		dm.EndPointsLock.Unlock()
 
-		dm.Logger.Printf("Detected a container (removed/%s)", containerID[:12])
+		fmt.Printf("Detected a container (removed/%s)", containerID[:12])
 	}
 
 	return true
 }
 
 // MonitorContainerdEvents Function
-func (dm *KubeArmorDaemon) MonitorContainerdEvents() {
+func (dm *KrsieDaemon) MonitorContainerdEvents() {
 	dm.WgDaemon.Add(1)
 	defer dm.WgDaemon.Done()
 
@@ -344,7 +343,7 @@ func (dm *KubeArmorDaemon) MonitorContainerdEvents() {
 		return
 	}
 
-	dm.Logger.Print("Started to monitor Containerd events")
+	fmt.Print("Started to monitor Containerd events")
 
 	for {
 		select {

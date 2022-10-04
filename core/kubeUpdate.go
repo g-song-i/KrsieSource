@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -25,13 +26,14 @@ func Clone(src, dst interface{}) error {
 	return json.Unmarshal(arr, dst)
 }
 
-func matchHost(hostName string, targetName string) bool {
-	envName := targetName
+func matchHost(hostName string) bool {
+
+	envName := os.Getenv("KUBEARMOR_NODENAME")
 	if envName != "" {
 		return envName == hostName
 	}
 	nodeName := strings.Split(hostName, ".")[0]
-	return nodeName == targetName
+	return nodeName == cfg.GlobalCfg.Host
 }
 
 // MatchIdentities Function
@@ -58,6 +60,7 @@ func MatchIdentities(identities []string, superIdentities []string) bool {
 // WatchK8sNodes Function
 func (dm *KrsieDaemon) WatchK8sNodes() {
 
+	fmt.Printf("GlobalCfg.Host=%s, NODENAME=%s", cfg.GlobalCfg.Host, os.Getenv("KUBEARMOR_NODENAME"))
 	for {
 		if resp := K8s.WatchK8sNodes(); resp != nil {
 			defer resp.Body.Close()
@@ -71,11 +74,8 @@ func (dm *KrsieDaemon) WatchK8sNodes() {
 					break
 				}
 
-				// specified a name of the node which will be watched (needed)
-				// targetNode := "cnsl-mec"
-
 				// if there is no target name, we automatically choose last node which is listed
-				if !matchHost(event.Object.ObjectMeta.Name, targetNode) {
+				if !matchHost(event.Object.ObjectMeta.Name) {
 					continue
 				}
 

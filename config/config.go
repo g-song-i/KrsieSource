@@ -18,7 +18,8 @@ type KrsieConfig struct {
 	Cluster string // Cluster name to use for feeds
 	Host    string // Host name to use for feeds
 
-	GRPC string // gRPC Port to use
+	GRPC   string // gRPC Port to use
+	K8sEnv bool   // Is k8s env ?
 }
 
 // GlobalCfg Global configuration for Kubearmor
@@ -70,24 +71,11 @@ func LoadConfig() error {
 	// Note that the env var has to be set in uppercase for e.g, CLUSTER=xyz ./kubearmor
 	viper.AutomaticEnv()
 
-	// Read configuration from config file
-	cfgfile := os.Getenv("KUBEARMOR_CFG")
-	if cfgfile == "" {
-		cfgfile = "kubearmor.yaml"
-	}
-	if _, err := os.Stat(cfgfile); err == nil {
-		fmt.Printf("setting config from file [%s]", cfgfile)
-		viper.SetConfigFile(cfgfile)
-		err := viper.ReadInConfig()
-		if err != nil {
-			return err
-		}
-	}
-
 	GlobalCfg.Cluster = viper.GetString(ConfigCluster)
 	GlobalCfg.Host = viper.GetString(ConfigHost)
 
 	GlobalCfg.GRPC = viper.GetString(ConfigGRPC)
+	GlobalCfg.K8sEnv = viper.GetBool(ConfigK8sEnv)
 
 	fmt.Printf("Configuration [%+v]", GlobalCfg)
 	fmt.Printf("Final Configuration [%+v]", GlobalCfg)

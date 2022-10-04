@@ -103,22 +103,20 @@ func NewK8sHandler() *K8sHandler {
 
 	kh := &K8sHandler{}
 
-	// This is just for test. This must be change
-	// This will be changed whenever server is rebooted. Need to change
-	kh.K8sToken = "eyJhbGciOiJSUzI1NiIsImtpZCI6InM0cVlnNExsZ2I3TWdtbnRpaGYyNTBEa1d6S01BZDNCVnRSNWp1cEx6RncifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRlZmF1bHQtdG9rZW4tbWdnd3ciLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGVmYXVsdCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6ImIzY2E2N2Q5LTExOTgtNDVjZi05NWZlLTMwMTE1MTI5NzQ2NSIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OmRlZmF1bHQifQ.cMTX_BlGoGRt-wjaI6Zh6HeorDO3wJSM7sXp3P8XHuqB1bnWCEIDp3kvHeOp38b6qjDju4uJJd8MOhPbjLYw67deAAVjzJbpzFv1Kci2uvNSbEYsUMi3W-sJnhU5lARIB6PnUTXaQP_SyvbidyDO5G4j5yR7BfZdoshGgUJzt7_kuIucoWOO1qbTpySCVGgGKPeFWn1ZFdleGdaHfvR5nJbIWl-mZvD6fq6Rbj5OcqXR0axBLer4V-wTxssOos86wZqeGf9PW2r32OsMxWnxI7iWtuoJzN3EATzj3CJX_IB0KUAGBGujOLDmjIwO1XO8T0kVKpJ6urXN6pF78CuM9A"
+	if val, ok := os.LookupEnv("KUBERNETES_SERVICE_HOST"); ok {
+		kh.K8sHost = val
+		fmt.Printf("HOST IP= %s \n", kh.K8sHost)
+	} else {
+		kh.K8sHost = "127.0.0.1"
+		fmt.Printf("HOST IP= %s \n", kh.K8sHost)
+	}
 
-	// speciified an address of a cluster
-	kh.K8sHost = "220.70.2.222"
-	kh.K8sPort = "6443"
-
-	// create the configuration by token
-	kubeConfig := &rest.Config{
-		Host:        "https://" + kh.K8sHost + ":" + kh.K8sPort,
-		BearerToken: kh.K8sToken,
-		// #nosec
-		TLSClientConfig: rest.TLSClientConfig{
-			Insecure: true,
-		},
+	if val, ok := os.LookupEnv("KUBERNETES_PORT_443_TCP_PORT"); ok {
+		kh.K8sPort = val
+		fmt.Printf("HOST PORT= %s \n", kh.K8sPort)
+	} else {
+		kh.K8sPort = "8001" // kube-proxy
+		fmt.Printf("HOST PORT= %s \n", kh.K8sPort)
 	}
 
 	kh.HTTPClient = &http.Client{
@@ -136,12 +134,6 @@ func NewK8sHandler() *K8sHandler {
 		},
 	}
 
-	client, err := kubernetes.NewForConfig(kubeConfig)
-	if err != nil {
-		return nil
-	}
-	kh.K8sClient = client
-	// fmt.Println("Here is pass")
 	return kh
 }
 

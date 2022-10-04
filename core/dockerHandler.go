@@ -222,7 +222,7 @@ func (dh *DockerHandler) GetEventChannel() <-chan events.Message {
 // =================== //
 
 // GetAlreadyDeployedDockerContainers Function
-func (dm *BpfenforcerDaemon) GetAlreadyDeployedDockerContainers() {
+func (dm *KrsieDaemon) GetAlreadyDeployedDockerContainers() {
 	// check if Docker exists
 	if Docker == nil {
 		return
@@ -289,7 +289,7 @@ func (dm *BpfenforcerDaemon) GetAlreadyDeployedDockerContainers() {
 }
 
 // UpdateDockerContainer Function
-func (dm *BpfenforcerDaemon) UpdateDockerContainer(containerID, action string) {
+func (dm *KrsieDaemon) UpdateDockerContainer(containerID, action string) {
 	// check if Docker exists
 	if Docker == nil {
 		return
@@ -395,7 +395,7 @@ func (dm *BpfenforcerDaemon) UpdateDockerContainer(containerID, action string) {
 }
 
 // MonitorDockerEvents Function
-func (dm *BpfenforcerDaemon) MonitorDockerEvents() {
+func (dm *KrsieDaemon) MonitorDockerEvents() {
 	dm.WgDaemon.Add(1)
 	defer dm.WgDaemon.Done()
 
