@@ -28,8 +28,12 @@ func Clone(src, dst interface{}) error {
 
 func matchHost(hostName string) bool {
 
-	envName := os.Getenv("KUBEARMOR_NODENAME")
+	envName := os.Getenv("HOST_LOCAL_NODE")
+	// fmt.Println("HOST_LOCAL_NODE", envName) // cnsl-mec
+	// fmt.Println("cfg.GlobalCfg.Host", cfg.GlobalCfg.Host) // cnsl-MEC
 	if envName != "" {
+		// fmt.Println("envName is", envName)
+		// fmt.Println("hostName is", hostName) // NULL
 		return envName == hostName
 	}
 	nodeName := strings.Split(hostName, ".")[0]
@@ -60,7 +64,7 @@ func MatchIdentities(identities []string, superIdentities []string) bool {
 // WatchK8sNodes Function
 func (dm *KrsieDaemon) WatchK8sNodes() {
 
-	fmt.Printf("GlobalCfg.Host=%s, NODENAME=%s", cfg.GlobalCfg.Host, os.Getenv("KUBEARMOR_NODENAME"))
+	fmt.Printf("GlobalCfg.Host=%s, NODENAME=%s \n", cfg.GlobalCfg.Host, os.Getenv("HOST_LOCAL_NODE"))
 	for {
 		if resp := K8s.WatchK8sNodes(); resp != nil {
 			defer resp.Body.Close()
@@ -74,12 +78,10 @@ func (dm *KrsieDaemon) WatchK8sNodes() {
 					break
 				}
 
-				// if there is no target name, we automatically choose last node which is listed
 				if !matchHost(event.Object.ObjectMeta.Name) {
 					continue
 				}
 
-				//fmt.Printf("what is this: %s \n", event.Object.ObjectMeta.Name)
 				node := tp.Node{}
 
 				// speciified a name of cluster
@@ -129,6 +131,7 @@ func (dm *KrsieDaemon) WatchK8sNodes() {
 			}
 		} else {
 			time.Sleep(time.Second * 1)
+			fmt.Println("response is nil")
 		}
 	}
 }

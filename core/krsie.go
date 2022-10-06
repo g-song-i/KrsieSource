@@ -95,7 +95,7 @@ func NewKrsieDaemon() *KrsieDaemon {
 func (dm *KrsieDaemon) DestroyKrsieDaemon() {
 
 	// wait for other routines
-	fmt.Print("Waiting for routine terminations")
+	fmt.Println("Waiting for routine terminations")
 	dm.WgDaemon.Wait()
 
 }
@@ -129,7 +129,7 @@ func Krsie() {
 
 	if cfg.GlobalCfg.K8sEnv {
 		if !K8s.InitK8sClient() {
-			fmt.Printf("Failed to initialize Kubernetes client")
+			fmt.Println("Failed to initialize Kubernetes client")
 			// destroy the daemon
 			dm.DestroyKrsieDaemon()
 
@@ -137,7 +137,7 @@ func Krsie() {
 		}
 	}
 
-	fmt.Print("Initialized Kubernetes client")
+	fmt.Println("Initialized Kubernetes client")
 
 	// get kubernetes node information
 	go dm.WatchK8sNodes()
@@ -151,10 +151,10 @@ func Krsie() {
 			break
 		}
 		if dm.Node.NodeIP == "" && timeout == 60 {
-			fmt.Print("node information is not available, terminating")
+			fmt.Println("node information is not available, terminating")
 			break
 		}
-		fmt.Print("node information is not available")
+		fmt.Println("node information is not available")
 		// wait for a while
 		time.Sleep(time.Second * 1)
 	}

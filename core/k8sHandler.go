@@ -7,19 +7,21 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	cfg "github.com/g-song-i/KrsieSource/config"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	rest "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -71,52 +73,115 @@ func IsK8sLocal() bool {
 	return false
 }
 
-// IsInK8sCluster Function
-func IsInK8sCluster() bool {
-	if _, ok := os.LookupEnv("KUBERNETES_SERVICE_HOST"); ok {
-		return true
-	}
-
-	if _, err := os.Stat(filepath.Clean("/run/secrets/kubernetes.io")); err == nil {
-		return true
-	}
-
-	return false
-}
-
 // IsK8sEnv Function
 func IsK8sEnv() bool {
 	// local
 	if IsK8sLocal() {
 		return true
 	}
+	return false
+}
 
-	// in-cluster
-	if IsInK8sCluster() {
-		return true
+var err error
+
+func ConfigureHostIP() {
+
+	var hostIP string
+
+	command := "hostname -I | awk '{print $1;}'"
+	out, err := exec.Command("bash", "-c", command).Output()
+	if err != nil {
+		fmt.Sprintf("Failed to execute command: ", command)
 	}
 
-	return false
+	hostIP = strings.TrimSpace(string(out))
+	os.Setenv("HOST_IP", hostIP)
+	fmt.Println("Successfully set HOST_IP, HOST_IP is: ", hostIP)
+}
+
+func ConfigureHostNode() {
+
+	var hostNode string
+
+	command := "kubectl get nodes -o wide | grep $HOST_IP | awk '{print $1;}'"
+	out, err := exec.Command("bash", "-c", command).Output()
+	if err != nil {
+		fmt.Sprintf("Failed to execute command: ", command)
+	}
+
+	hostNode = strings.TrimSpace(string(out))
+	os.Setenv("HOST_LOCAL_NODE", hostNode)
+	fmt.Println("Successfully set HOST_LOCAL_NODE is: ", hostNode)
+}
+
+func ConfigureNodePort() {
+
+	var hostPort string
+
+	command := "kubectl cluster-info | grep $HOST_IP | grep proxy | cut -d '/' -f 3 | cut -d ':' -f 2"
+	out, err := exec.Command("bash", "-c", command).Output()
+	if err != nil {
+		fmt.Sprintf("Failed to execute command: ", command)
+	}
+
+	hostPort = strings.TrimSpace(string(out))
+	os.Setenv("HOST_PORT", hostPort)
+	fmt.Println("Successfully set HOST_PORT is: ", hostPort)
+}
+
+func ConfigureToken() string {
+	var hostToken string
+	var hostTokenName string
+	var resultToken string
+
+	command := "kubectl get secret -n default | grep default | cut -d ' ' -f 1"
+	out, err := exec.Command("bash", "-c", command).Output()
+	if err != nil {
+		fmt.Sprintf("Failed to execute command: ", command)
+	}
+
+	hostTokenName = strings.TrimSpace(string(out))
+	// fmt.Println("HOST_TOKEN_NAME is: ", hostTokenName)
+
+	secondCommand := "kubectl get secret " + hostTokenName + " -n default -o yaml | grep token: | cut -d ':' -f 2"
+	// fmt.Println(secondCommand)
+	secondOut, err := exec.Command("bash", "-c", secondCommand).Output()
+	if err != nil {
+		fmt.Sprintf("Failed to execute command: ", secondCommand)
+	}
+
+	hostToken = strings.TrimSpace(string(secondOut))
+	TokenDecode, _ := b64.StdEncoding.DecodeString(hostToken)
+	resultToken = string(TokenDecode)
+
+	// fmt.Println("HOST_TOKEN is: ", hostToken)
+	fmt.Println("Successfully set host token")
+	return resultToken
 }
 
 func NewK8sHandler() *K8sHandler {
 
 	kh := &K8sHandler{}
 
-	if val, ok := os.LookupEnv("KUBERNETES_SERVICE_HOST"); ok {
+	ConfigureHostIP()
+	ConfigureHostNode()
+	ConfigureNodePort()
+	kh.K8sToken = ConfigureToken()
+
+	if val, ok := os.LookupEnv("HOST_IP"); ok {
 		kh.K8sHost = val
-		fmt.Printf("HOST IP= %s \n", kh.K8sHost)
+		fmt.Printf("Kuberntes Handeler: HOST IP= %s \n", kh.K8sHost)
 	} else {
 		kh.K8sHost = "127.0.0.1"
-		fmt.Printf("HOST IP= %s \n", kh.K8sHost)
+		fmt.Printf("Kuberntes Handeler: HOST IP= %s \n", kh.K8sHost)
 	}
 
-	if val, ok := os.LookupEnv("KUBERNETES_PORT_443_TCP_PORT"); ok {
+	if val, ok := os.LookupEnv("HOST_PORT"); ok {
 		kh.K8sPort = val
-		fmt.Printf("HOST PORT= %s \n", kh.K8sPort)
+		fmt.Printf("Kuberntes Handeler: HOST PORT= %s \n", kh.K8sPort)
 	} else {
 		kh.K8sPort = "8001" // kube-proxy
-		fmt.Printf("HOST PORT= %s \n", kh.K8sPort)
+		fmt.Printf("Kuberntes Handeler: HOST PORT= %s \n", kh.K8sPort)
 	}
 
 	kh.HTTPClient = &http.Client{
@@ -144,9 +209,6 @@ func (kh *K8sHandler) InitK8sClient() bool {
 	}
 
 	if kh.K8sClient == nil {
-		if IsInK8sCluster() {
-			return kh.InitInclusterAPIClient()
-		}
 		if IsK8sLocal() {
 			return kh.InitLocalAPIClient()
 		}
@@ -182,33 +244,6 @@ func (kh *K8sHandler) InitLocalAPIClient() bool {
 	return true
 }
 
-// InitInclusterAPIClient Function
-func (kh *K8sHandler) InitInclusterAPIClient() bool {
-	read, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
-	if err != nil {
-		return false
-	}
-	kh.K8sToken = string(read)
-
-	// create the configuration by token
-	kubeConfig := &rest.Config{
-		Host:        "https://" + kh.K8sHost + ":" + kh.K8sPort,
-		BearerToken: kh.K8sToken,
-		// #nosec
-		TLSClientConfig: rest.TLSClientConfig{
-			Insecure: true,
-		},
-	}
-
-	client, err := kubernetes.NewForConfig(kubeConfig)
-	if err != nil {
-		return false
-	}
-	kh.K8sClient = client
-
-	return true
-}
-
 // ============== //
 // == API Call == //
 // ============== //
@@ -216,12 +251,7 @@ func (kh *K8sHandler) InitInclusterAPIClient() bool {
 // DoRequest Function
 func (kh *K8sHandler) DoRequest(cmd string, data interface{}, path string) ([]byte, error) {
 	URL := ""
-
-	if IsInK8sCluster() {
-		URL = "https://" + kh.K8sHost + ":" + kh.K8sPort
-	} else {
-		URL = "http://" + kh.K8sHost + ":" + kh.K8sPort
-	}
+	URL = "http://" + kh.K8sHost + ":" + kh.K8sPort
 
 	pbytes, err := json.Marshal(data)
 	if err != nil {
@@ -233,10 +263,8 @@ func (kh *K8sHandler) DoRequest(cmd string, data interface{}, path string) ([]by
 		return nil, err
 	}
 
-	if IsInK8sCluster() {
-		req.Header.Add("Content-Type", "application/json")
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", kh.K8sToken))
-	}
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", kh.K8sToken))
 
 	resp, err := kh.HTTPClient.Do(req)
 	if err != nil {
@@ -266,33 +294,23 @@ func (kh *K8sHandler) WatchK8sNodes() *http.Response {
 		return nil
 	}
 
-	if IsInK8sCluster() { // kube-apiserver
-		URL := "https://" + kh.K8sHost + ":" + kh.K8sPort + "/api/v1/nodes?watch=true"
-
-		req, err := http.NewRequest("GET", URL, nil)
-		if err != nil {
-			return nil
-		}
-
-		req.Header.Add("Content-Type", "application/json")
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", kh.K8sToken))
-
-		resp, err := kh.WatchClient.Do(req)
-		if err != nil {
-			return nil
-		}
-
-		return resp
-	}
-
 	URL := "https://" + kh.K8sHost + ":" + kh.K8sPort + "/api/v1/nodes?watch=true"
 
-	// #nosec
-	if resp, err := http.Get(URL); err == nil {
-		return resp
+	req, err := http.NewRequest("GET", URL, nil)
+	if err != nil {
+		return nil
 	}
 
-	return nil
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", kh.K8sToken))
+
+	resp, err := kh.WatchClient.Do(req)
+	if err != nil {
+		return nil
+	}
+
+	// fmt.Println("%s, pass k8shandler correctly", URL)
+	return resp
 }
 
 // ========== //
@@ -305,34 +323,22 @@ func (kh *K8sHandler) WatchK8sPods() *http.Response {
 		return nil
 	}
 
-	if IsInK8sCluster() { // kube-apiserver
-		URL := "https://" + kh.K8sHost + ":" + kh.K8sPort + "/api/v1/pods?watch=true"
+	URL := "https://" + kh.K8sHost + ":" + kh.K8sPort + "/api/v1/pods?watch=true"
 
-		req, err := http.NewRequest("GET", URL, nil)
-		if err != nil {
-			return nil
-		}
-
-		req.Header.Add("Content-Type", "application/json")
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", kh.K8sToken))
-
-		resp, err := kh.WatchClient.Do(req)
-		if err != nil {
-			return nil
-		}
-
-		return resp
+	req, err := http.NewRequest("GET", URL, nil)
+	if err != nil {
+		return nil
 	}
 
-	// kube-proxy (local)
-	URL := "http://" + kh.K8sHost + ":" + kh.K8sPort + "/api/v1/pods?watch=true"
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", kh.K8sToken))
 
-	// #nosec
-	if resp, err := http.Get(URL); err == nil {
-		return resp
+	resp, err := kh.WatchClient.Do(req)
+	if err != nil {
+		return nil
 	}
 
-	return nil
+	return resp
 }
 
 // ====================== //
@@ -354,7 +360,7 @@ func (kh *K8sHandler) CheckCustomResourceDefinition(resourceName string) bool {
 		res := metav1.APIGroupList{}
 		if errIn := json.Unmarshal(resBody, &res); errIn == nil {
 			for _, group := range res.Groups {
-				if group.Name == "security.kubearmor.com" {
+				if group.Name == "cnsl.dev.cnsl.krsiepolicy.com" {
 					exist = true
 					apiGroup = group
 					break
@@ -387,34 +393,23 @@ func (kh *K8sHandler) WatchK8sSecurityPolicies() *http.Response {
 		return nil
 	}
 
-	if IsInK8sCluster() {
-		URL := "https://" + kh.K8sHost + ":" + kh.K8sPort + "/apis/cnsl.dev.cnsl.krsiepolicy.com/v1alpha1/krsiepolicies?watch=true"
-
-		req, err := http.NewRequest("GET", URL, nil)
-		if err != nil {
-			return nil
-		}
-
-		req.Header.Add("Content-Type", "application/json")
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", kh.K8sToken))
-
-		resp, err := kh.WatchClient.Do(req)
-		if err != nil {
-			return nil
-		}
-
-		return resp
-	}
-
 	// kube-proxy (local)
 	URL := "http://" + kh.K8sHost + ":" + kh.K8sPort + "/apis/cnsl.dev.cnsl.krsiepolicy.com/v1alpha1/krsiepolicies?watch=true"
 
-	// #nosec
-	if resp, err := http.Get(URL); err == nil {
-		return resp
+	req, err := http.NewRequest("GET", URL, nil)
+	if err != nil {
+		return nil
 	}
 
-	return nil
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", kh.K8sToken))
+
+	resp, err := kh.WatchClient.Do(req)
+	if err != nil {
+		return nil
+	}
+
+	return resp
 }
 
 // ================ //
