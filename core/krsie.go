@@ -162,7 +162,7 @@ func Krsie() {
 	// can get node information properly
 	fmt.Printf("Node Name: %s \n", dm.Node.NodeName)
 	fmt.Printf("Node IP: %s \n", dm.Node.NodeIP)
-	fmt.Printf("Node Annotations: %v \n", dm.Node.Annotations)
+	//fmt.Printf("Node Annotations: %v \n", dm.Node.Annotations)
 	fmt.Printf("OS Image: %s \n", dm.Node.OSImage)
 	fmt.Printf("Kernel Version: %s \n", dm.Node.KernelVersion)
 	fmt.Printf("Kubelet Version: %s \n", dm.Node.KubeletVersion)

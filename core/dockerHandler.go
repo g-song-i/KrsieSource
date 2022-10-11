@@ -404,7 +404,7 @@ func (dm *KrsieDaemon) MonitorDockerEvents() {
 		return
 	}
 
-	fmt.Printf("Started to monitor Docker events")
+	fmt.Println("Started to monitor Docker events")
 
 	EventChan := Docker.GetEventChannel()
 
