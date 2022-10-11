@@ -36,10 +36,7 @@ func main() {
 		fmt.Printf("Build Time: %v", time.Unix(int64(stat.Ctim.Sec), int64(stat.Ctim.Nsec)))
 	}
 
-	krsieCRD := install.GetCRD()
-	if krsieCRD == nil {
-		fmt.Println("error to create CRD ")
-	}
+	install.GetCRD()
 
 	if err := cfg.LoadConfig(); err != nil {
 		fmt.Printf(err.Error())
