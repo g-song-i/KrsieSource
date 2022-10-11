@@ -5,6 +5,7 @@ package main
 import (
 	cfg "github.com/g-song-i/KrsieSource/config"
 	core "github.com/g-song-i/KrsieSource/core"
+	install "github.com/g-song-i/KrsieSource/install"
 
 	"fmt"
 	"os"
@@ -33,6 +34,11 @@ func main() {
 	if finfo, err := os.Stat(os.Args[0]); err == nil {
 		stat := finfo.Sys().(*syscall.Stat_t)
 		fmt.Printf("Build Time: %v", time.Unix(int64(stat.Ctim.Sec), int64(stat.Ctim.Nsec)))
+	}
+
+	krsieCRD := install.GetCRD()
+	if krsieCRD == nil {
+		fmt.Println("error to create CRD ")
 	}
 
 	if err := cfg.LoadConfig(); err != nil {
