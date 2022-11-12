@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: setgid-1111-deployment
+  namespace: default
+  labels:
+    deployment: setgid-1111
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      group: group-gid
+      container: setgid-1111
+  template:
+    metadata:
+      labels:
+        group: group-gid
+        container: setgid-1111
+    spec:
+      nodeSelector:
+        type: "test"
+      containers:
+        - name: setgid-1111-container
+          image: song22/setgid-songi:latest
+          command: ["/bin/sh", "-ec", "while :; do echo '.'; sleep 6000 ; done"]
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          operator: Equal
+          effect: NoSchedule

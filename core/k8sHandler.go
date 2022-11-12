@@ -10,7 +10,7 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -250,35 +250,58 @@ func (kh *K8sHandler) InitLocalAPIClient() bool {
 
 // DoRequest Function
 func (kh *K8sHandler) DoRequest(cmd string, data interface{}, path string) ([]byte, error) {
-	URL := ""
-	URL = "http://" + kh.K8sHost + ":" + kh.K8sPort
+	URL := "https://" + kh.K8sHost + ":" + kh.K8sPort
 
 	pbytes, err := json.Marshal(data)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
 	req, err := http.NewRequest(cmd, URL+path, bytes.NewBuffer(pbytes))
 	if err != nil {
+		fmt.Println("error while making http new request", err)
 		return nil, err
 	}
 
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", kh.K8sToken))
 
-	resp, err := kh.HTTPClient.Do(req)
+	resp, err := kh.WatchClient.Do(req)
 	if err != nil {
+		fmt.Println("error while calling watch client", err)
 		return nil, err
 	}
 
-	resBody, err := ioutil.ReadAll(resp.Body)
+	resBody, err := io.ReadAll(resp.Body)
 	if err != nil {
+		fmt.Println("error while handling response body", err)
 		return nil, err
 	}
 
-	if err := resp.Body.Close(); err != nil {
-		fmt.Println(err)
-	}
+	defer resp.Body.Close()
+
+	/*
+		resBody, err := httputil.DumpResponse(resp, true)
+		if err != nil {
+			fmt.Println("error while read response", err)
+			return nil, err
+		}
+	*/
+
+	/*
+		decoder := json.NewDecoder(resp.Body)
+		result := decoder.Buffered()
+
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(result)
+	*/
+
+	/*
+		if err := resp.Body.Close(); err != nil {
+			fmt.Println(err)
+		}
+	*/
 
 	return resBody, nil
 }
@@ -347,7 +370,6 @@ func (kh *K8sHandler) WatchK8sPods() *http.Response {
 
 // CheckCustomResourceDefinition Function
 func (kh *K8sHandler) CheckCustomResourceDefinition(resourceName string) bool {
-
 	if !IsK8sEnv() { // not Kubernetes
 		return false
 	}
@@ -361,6 +383,7 @@ func (kh *K8sHandler) CheckCustomResourceDefinition(resourceName string) bool {
 		if errIn := json.Unmarshal(resBody, &res); errIn == nil {
 			for _, group := range res.Groups {
 				if group.Name == "cnsl.dev.cnsl.krsiepolicy.com" {
+					// fmt.Println("API group exists")
 					exist = true
 					apiGroup = group
 					break
@@ -376,6 +399,7 @@ func (kh *K8sHandler) CheckCustomResourceDefinition(resourceName string) bool {
 			if errIn := json.Unmarshal(resBody, &res); errIn == nil {
 				for _, resource := range res.APIResources {
 					if resource.Name == resourceName {
+						// fmt.Println("API resource exists")
 						return true
 					}
 				}
@@ -394,7 +418,7 @@ func (kh *K8sHandler) WatchK8sSecurityPolicies() *http.Response {
 	}
 
 	// kube-proxy (local)
-	URL := "http://" + kh.K8sHost + ":" + kh.K8sPort + "/apis/cnsl.dev.cnsl.krsiepolicy.com/v1alpha1/krsiepolicies?watch=true"
+	URL := "https://" + kh.K8sHost + ":" + kh.K8sPort + "/apis/cnsl.dev.cnsl.krsiepolicy.com/v1alpha1/krsiepolicies?watch=true"
 
 	req, err := http.NewRequest("GET", URL, nil)
 	if err != nil {

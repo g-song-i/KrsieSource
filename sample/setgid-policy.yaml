@@ -1,0 +1,20 @@
+apiVersion: cnsl.dev.cnsl.krsiepolicy.com/v1alpha1
+kind: KrsiePolicy
+metadata:
+  name: krsiepolicy-gid
+spec:
+  message: "Deny task_fix_setgid== 100 for setuid syscall"
+  selector:
+    matchLabels:
+      group: group-gid
+  syscall: setgid
+  lsmHook: task_fix_setgid
+  conditions:
+    - parameter: data.new_gid
+      operator: 
+        ==
+      value: "100"
+      action: 
+        Deny
+
+        

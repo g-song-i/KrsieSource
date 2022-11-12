@@ -366,6 +366,7 @@ func (dm *KrsieDaemon) WatchK8sPods() {
 // WatchSecurityPolicies Function
 func (dm *KrsieDaemon) WatchK8sSecurityPolicies() {
 	for {
+
 		if !K8s.CheckCustomResourceDefinition("krsiepolicies") {
 			time.Sleep(time.Second * 1)
 			continue
@@ -419,16 +420,14 @@ func (dm *KrsieDaemon) WatchK8sSecurityPolicies() {
 					return secPolicy.Spec.Selector.Identities[i] < secPolicy.Spec.Selector.Identities[j]
 				})
 
-				/*
-					fmt.Printf("security spec, name: %s \n", secPolicy.Spec.Name)
-					fmt.Printf("security spec, lsm name: %s \n", secPolicy.Spec.LsmName)
-					fmt.Printf("security spec, condition parameter: %s \n", event.Object.Spec.Conditions[0].Parameter)
-					fmt.Printf("security spec, condition operator: %s \n", event.Object.Spec.Conditions[0].Operator)
-					fmt.Printf("security spec, condition value: %s \n", event.Object.Spec.Conditions[0].Value)
-					fmt.Printf("security spec, condition action: %s \n", event.Object.Spec.Conditions[0].Action)
-					fmt.Println("========= security policy information =========")
-					fmt.Println("")
-				*/
+				fmt.Printf("security spec, name: %s \n", secPolicy.Spec.Name)
+				fmt.Printf("security spec, lsm name: %s \n", secPolicy.Spec.LsmName)
+				fmt.Printf("security spec, condition parameter: %s \n", event.Object.Spec.Conditions[0].Parameter)
+				fmt.Printf("security spec, condition operator: %s \n", event.Object.Spec.Conditions[0].Operator)
+				fmt.Printf("security spec, condition value: %s \n", event.Object.Spec.Conditions[0].Value)
+				fmt.Printf("security spec, condition action: %s \n", event.Object.Spec.Conditions[0].Action)
+				fmt.Println("========= security policy information =========")
+				fmt.Println("")
 
 				// update a security policy into the policy list
 
