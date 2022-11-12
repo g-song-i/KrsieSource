@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"strconv"
@@ -29,10 +30,16 @@ type Event struct {
 func (dm *KrsieDaemon) Bpfenforcer() {
 
 	// preparation
-	path, err := os.Getwd()
-	if err != nil {
-		fmt.Println("error to get path", err)
-	}
+	/*
+		path, err := os.Getwd()
+		if err != nil {
+			fmt.Println("error to get path", err)
+		}
+		fmt.Printf("Current working path: %s \n", path)
+	*/
+
+	gopath := os.Getenv("GOPATH")
+	python_path := gopath + "/../source/KrsieSource/core/"
 
 	for _, endPoint := range dm.EndPoints {
 		for _, container := range dm.Containers {
@@ -73,7 +80,7 @@ func (dm *KrsieDaemon) Bpfenforcer() {
 					mountNs = "0x" + mountNs
 					condition := condition_parameter + condition_operator + condition_value
 
-					file, err := os.Open(path + "/../bpf/" + lsm_name + ".c")
+					file, err := os.Open(gopath + "/../source/KrsieSource/bpf/" + lsm_name + ".c")
 					if err != nil {
 						fmt.Println("error occur when open bpf file")
 					}
@@ -81,7 +88,7 @@ func (dm *KrsieDaemon) Bpfenforcer() {
 
 					scanner := bufio.NewScanner(file)
 
-					newFilePath := path + "/../policy/" + syscall_name + "_" + lsm_name + "_" + mountNs + "_" + strconv.Itoa(idx) + ".c"
+					newFilePath := gopath + "/../source/KrsieSource/policy/" + syscall_name + "_" + lsm_name + "_" + mountNs + "_" + strconv.Itoa(idx) + ".c"
 
 					enforcePath = newFilePath
 
@@ -121,7 +128,7 @@ func (dm *KrsieDaemon) Bpfenforcer() {
 						new_policy.WriteString(sentence)
 						raw += sentence
 					}
-					go RunEnforce(enforcePath)
+					go RunEnforce(python_path, enforcePath)
 				}
 			}
 
@@ -129,13 +136,13 @@ func (dm *KrsieDaemon) Bpfenforcer() {
 	}
 }
 
-func RunEnforce(policyPath string) {
+func RunEnforce(pythonPath string, policyPath string) {
 
-	cmd := exec.Command("python3", "main.py", "-f", policyPath)
+	cmd := exec.Command("python3", pythonPath+"main.py", "-f", policyPath)
 	fmt.Printf("policy enforcement start %s \n", policyPath)
 	cmd.Stdout = os.Stdout
 
 	if err := cmd.Run(); err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 }
