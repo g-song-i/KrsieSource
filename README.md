@@ -15,8 +15,19 @@ This project is inspired by KRSI (Kernel Runtime Security Instrumentation) and K
 
 1. GIVE ROLE TO MASTER NODE
 
-To test some scenarios successfully, we assume that we can deploy any container to master node. To do this, you need to run the code below
+To test some scenarios successfully, we assume that we can deploy test containers to master node. To do this, you need to run the code below:
 
+Check your control-plane node if it is tainted using a command below:
+```
+kubectl describe node $NODE_NAME | grep Taints
+```
+
+To make a node untained by a role (role name would be different depending on the role name we checked from above):
+```
+kubectl taint nodes $NODE_NAME node-role.kubernetes.io/master-
+```
+
+If your control-plane does not have the role, then label it using command below:
 ```
 kubectl label nodes $NODE_NAME node-role.kubernetes.io/master=
 ```
