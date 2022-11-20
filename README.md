@@ -7,10 +7,10 @@ This project is inspired by KRSI (Kernel Runtime Security Instrumentation) and K
 * TEST ENVIRONMENT
 
 0. REQUIREMENTS
- - Kernel Version 5.7+
- - Docker Version 20.10+
- - GoLang 1.19+
- - Python 3.8+
+ -> Kernel Version 5.7+
+ -> Docker Version 20.10+
+ -> GoLang 1.19+
+ -> Python 3.8+
 
 1. GIVE ROLE TO MASTER NODE
 
