@@ -18,5 +18,5 @@ This project is inspired by KRSI (Kernel Runtime Security Instrumentation) and K
 To test some scenarios successfully, we assume that we can deploy any container to master node. To do this, you need to run the code below
 
 ```
-kubectl label nodes songi-virtualbox node-role.kubernetes.io/master=
+kubectl label nodes $NODE_NAME node-role.kubernetes.io/master=
 ```
