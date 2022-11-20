@@ -1,21 +1,23 @@
 # KrsieSource
 Kubernetes Runtime Security Instrumentation &amp; Enforcement
 
-This project is inspired by KRSI (Kernel Runtime Security Instrumentation) and KubeArmor to solve runtime security problems in MEC environments, which use Kubernetes orchestration system.
+
+This project is inspired by KRSI (Kernel Runtime Security Instrumentation) and KubeArmor to solve runtime security problems in Clou-native environments, which use Kubernetes orchestration system.
 
 
 * TEST ENVIRONMENT
 
 0. REQUIREMENTS
 
-   - Kernel Version 5.7+
+   - Kernel Version 5.7+ (for BPF-LSM)
    - Docker Version 20.10+
-   - GoLang 1.19+
+   - Kubernets Version 1.20+
+   - GoLang 1.19+ 
    - Python 3.8+
 
 1. GIVE ROLE TO MASTER NODE
 
-To test some scenarios successfully, we assume that we can deploy test containers to master node. To do this, you need to run the code below:
+To test some scenarios successfully, we assume that we can deploy test containers to master node. To do this, you need to run the codes below:
 
 Check your control-plane node if it is tainted using a command below:
 ```
@@ -31,3 +33,11 @@ If your control-plane does not have the role, then label it using command below:
 ```
 kubectl label nodes $NODE_NAME node-role.kubernetes.io/master=
 ```
+
+2. Check default token exists
+
+As far as we know, after a specific version of K8s, it does not make default token automatically. If you do not have default token, create it using install/default-token.yaml
+
+3. Check K8s resources can be touched
+
+Check RBAC to be sure that you can access K8s resources including pods, nodes and krsie policies. If you can not, create RBAC using install/custom-role.yaml
