@@ -36,8 +36,12 @@ kubectl label nodes $NODE_NAME node-role.kubernetes.io/master=
 
 2. Check default token exists
 
-As far as we know, after a specific version of K8s, it does not make default token automatically. If you do not have default token, create it using install/default-token.yaml
+As far as we know, after a specific version of K8s, it does not make default token automatically. If you do not have default token, create it using install/default-token.yaml.
 
 3. Check K8s resources can be touched
 
-Check RBAC to be sure that you can access K8s resources including pods, nodes and krsie policies. If you can not, create RBAC using install/custom-role.yaml
+Check RBAC to be sure that you can access K8s resources including pods, nodes and krsie policies. If you can not, create RBAC using install/custom-role.yaml.
+
+4. Check execution path
+
+Currently, we fix the execution and policies path from $GOPATH. If your code is not inside $GOPATH, it will not work properly.
