@@ -5,7 +5,15 @@ This project is inspired by KRSI (Kernel Runtime Security Instrumentation) and K
 
 
 * TEST ENVIRONMENT
+
+0. REQUIREMENTS
+ - Kernel Version 5.7+
+ - Docker Version 20.10+
+ - GoLang 1.19+
+ - Python 3.8+
+
 1. GIVE ROLE TO MASTER NODE
+
 To test some scenarios successfully, we assume that we can deploy any container to master node. To do this, you need to run the code below
 
 ```
