@@ -17,8 +17,6 @@ spec:
         group: group-setid-new
         container: setuid-setgid-new
     spec:
-      nodeSelector:
-        type: "test"
       containers:
         - name: setuid-setgid-new-container
           image: song22/setuid-setgid-songi:latest
