@@ -1,0 +1,20 @@
+apiVersion: cnsl.dev.cnsl.krsiepolicy.com/v1alpha1
+kind: KrsiePolicy
+metadata:
+  name: 
+spec:
+  message: "Deny security_bprm_check"
+  selector:
+    matchLabels:
+      group: group-setgid
+  syscall: 
+  lsmHook: security_bprm_check
+  conditions:
+    - parameter: data.inode
+      operator: 
+        ==
+      value: "178231215"
+      action: Allow
+        
+
+        
