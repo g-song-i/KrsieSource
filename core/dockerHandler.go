@@ -191,18 +191,19 @@ func (dh *DockerHandler) GetContainerInfo(containerID string) (tp.Container, err
 	}
 
 	// == //
-
 	/*
-
 		fmt.Printf("Docker container ID: %s \n", container.ContainerID)
 		fmt.Printf("Docker container Name: %s \n", container.ContainerName)
 		fmt.Printf("Docker container Namespace: %s \n", container.NamespaceName)
 		fmt.Printf("Docker container EndpointName: %s \n", container.EndPointName)
+		// container.PidNS = strconv.Itoa(int(container.PidNS))
 		fmt.Printf("Docker container PidNS: %s \n", container.PidNS)
+		// testpid := strconv.Itoa(int(container.PidNS))
+		// fmt.Printf("Docker container TEST PID: %s \n", testpid)
+		// container.MntNS = strconv.Itoa(int(container.MntNS))
 		fmt.Printf("Docker container MntNS: %s \n", container.MntNS)
 		fmt.Println("========= Docker container information =========")
 		fmt.Println("")
-
 	*/
 	return container, nil
 }

@@ -524,6 +524,8 @@ func (dm *KrsieDaemon) GetSecurityPolicies(identities []string) []tp.SecurityPol
 
 	for _, policy := range dm.SecurityPolicies {
 		if MatchIdentities(policy.Spec.Selector.Identities, identities) {
+
+			// fmt.Printf("identities for selector and actual identities %s || %s \n", policy.Spec.Selector.Identities, identities)
 			secPolicy := tp.SecurityPolicy{}
 			if err := Clone(policy, &secPolicy); err != nil {
 				fmt.Printf("Failed to clone a policy (%s)", err.Error())

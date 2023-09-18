@@ -43,7 +43,6 @@ func (dm *KrsieDaemon) Bpfenforcer() {
 
 	for _, endPoint := range dm.EndPoints {
 		for _, container := range dm.Containers {
-
 			enforcePath := ""
 			if len(endPoint.SecurityPolicies) > 0 {
 
@@ -56,6 +55,9 @@ func (dm *KrsieDaemon) Bpfenforcer() {
 					condition_operator := secPolicy.Spec.Conditions[0].Operator
 					condition_value := secPolicy.Spec.Conditions[0].Value
 					condition_action := secPolicy.Spec.Conditions[0].Action
+
+					// fmt.Println("syscall name %s", syscall_name)
+					// fmt.Println("lsm name %s", lsm_name)
 
 					action := ""
 					inverse := ""

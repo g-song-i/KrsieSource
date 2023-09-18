@@ -154,7 +154,7 @@ func ConfigureToken() string {
 	TokenDecode, _ := b64.StdEncoding.DecodeString(hostToken)
 	resultToken = string(TokenDecode)
 
-	// fmt.Println("HOST_TOKEN is: ", hostToken)
+	// fmt.Println("HOST_TOKEN is: ", resultToken)
 	fmt.Println("Successfully set host token")
 	return resultToken
 }
@@ -314,10 +314,13 @@ func (kh *K8sHandler) DoRequest(cmd string, data interface{}, path string) ([]by
 func (kh *K8sHandler) WatchK8sNodes() *http.Response {
 
 	if !IsK8sEnv() { // not Kubernetes
+		fmt.Println("Not a Kubernetes environment")
 		return nil
 	}
 
 	URL := "https://" + kh.K8sHost + ":" + kh.K8sPort + "/api/v1/nodes?watch=true"
+	// mt.Println("Constructed URL:", URL)
+	// fmt.Println("Using token:", kh.K8sToken)
 
 	req, err := http.NewRequest("GET", URL, nil)
 	if err != nil {
@@ -329,6 +332,7 @@ func (kh *K8sHandler) WatchK8sNodes() *http.Response {
 
 	resp, err := kh.WatchClient.Do(req)
 	if err != nil {
+		fmt.Println("Failed to execute HTTP request:", err)
 		return nil
 	}
 
