@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: torproxy-deployment
+  namespace: default
+  labels:
+    deployment: torproxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      group: torproxy-group
+      container: torproxy
+  template:
+    metadata:
+      labels:
+        group: torproxy-group
+        container: torproxy
+    spec:
+      nodeSelector:
+        type: "test"
+      containers:
+      - name: torproxy-container
+        image: dperson/torproxy
+        ports:
+        - containerPort: 8118
+          hostPort: 8118
+        - containerPort: 9050
+          hostPort: 9050
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          operator: Equal
+          effect: NoSchedule

@@ -1,0 +1,18 @@
+apiVersion: cnsl.dev.cnsl.krsiepolicy.com/v1alpha1
+kind: KrsiePolicy
+metadata:
+  name: krsiepolicy-tor
+spec:
+  message: "Deny known torproxy ports"
+  selector:
+    matchLabels: 
+      group: torproxy-group
+  syscall: socket_connect
+  lsmHook: socket_connect
+  conditions:
+    - parameter: data.remote_port
+      operator:
+        ==
+      value: "9050"
+      action: 
+        Deny
